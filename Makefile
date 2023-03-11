@@ -1,4 +1,4 @@
-obj-m += mptcp_sched.o
+obj-m += mptcp_mysched.o
 all:
 	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
 
