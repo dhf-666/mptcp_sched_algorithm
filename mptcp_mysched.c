@@ -2,6 +2,7 @@
 
 #include <linux/module.h>
 #include <net/mptcp.h>
+#include <stdlib.h>
 
 static unsigned char num_segments __read_mostly = 1;
 module_param(num_segments, byte, 0644);
@@ -148,16 +149,18 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 		(F[i]).arr = (max_srtt/2 - tcp_sk((F[i]).subf)->srtt_us/2)/(tcp_sk((F[i]).subf)->srtt_us) + 1;
 		cnt_arr += (F[i]).arr;
 	}
-	struct arrive* A = (arrive*)malloc(cnt_arr * sizeof(arrive));    /*开设一个arrive数组*/
+	struct arrive* A = (struct arrive*)malloc(cnt_arr * sizeof(struct arrive));    /*开设一个arrive数组*/
 	u32 k = 0;
 	for(i = 0; i < cnt_f; i++){
-		for(int j = 0; j < (F[i]).arr; j++){
+		int j;
+		for(j = 0; j < (F[i]).arr; j++){
 			(A[k++]).t = tcp_sk((F[i]).subf)->srtt_us/2 * (2*j + 1);
 		}
 	}
 	
 	for(k = 1; k <= cnt_arr; k++){
-		for(int j = 0; j < cnt_arr-k+1; j++){
+		int j;
+		for(j = 0; j < cnt_arr-k+1; j++){
 			if((A[j]).t > (A[j+1]).t){
 				struct arrive temp = A[j];
 				A[j] = A[j+1];
