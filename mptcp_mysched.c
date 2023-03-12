@@ -20,16 +20,16 @@ static struct rrsched_priv *rrsched_get_priv(const struct tcp_sock *tp)
 	return (struct rrsched_priv *)&tp->mptcp->mptcp_sched[0];
 }
 
-/*Ôö¼ÓµÄ½á¹¹Ìå*/
-struct flow{    /*±íÊ¾Ò»Ìõsubflow*/
-	u32 id;    /*Á÷±àºÅ*/  
+/*å¢åŠ çš„ç»“æ„ä½“*/
+typedef struct{    /*è¡¨ç¤ºä¸€æ¡subflow*/
+	u32 id;    /*æµç¼–å·*/  
 	struct sock* subf;
-	u32 arr;    /*ÔÚÂıËÙÁ÷µÄÒ»°ãÊ±¼äÄÚµ½´ï½ÓÊÕ¶Ë´ÎÊı*/
-};
+	u32 arr;    /*åœ¨æ…¢é€Ÿæµçš„ä¸€èˆ¬æ—¶é—´å†…åˆ°è¾¾æ¥æ”¶ç«¯æ¬¡æ•°*/
+}flow;
 
-struct arrive{    /*±íÊ¾µ½´ï½ÓÊÕ¶ËµÄÒ»´ÎĞÅÏ¢*/
-	flow f;    /*Ò»Ìõsubflow*/
-	u32 t;    /*µ½´ï½ÓÊÕ¶ËµÄÊ±¼ä*/ 
+struct arrive{    /*è¡¨ç¤ºåˆ°è¾¾æ¥æ”¶ç«¯çš„ä¸€æ¬¡ä¿¡æ¯*/
+	flow f;    /*ä¸€æ¡subflow*/
+	u32 t;    /*åˆ°è¾¾æ¥æ”¶ç«¯çš„æ—¶é—´*/ 
 }; 
 
 /* If the sub-socket sk available to send the skb? */
@@ -116,7 +116,7 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 	const struct mptcp_cb *mpcb = tcp_sk(meta_sk)->mpcb;
 	struct sock *sk, *bestsk = NULL, *backupsk = NULL;
 	
-	/*ĞÂÔö¼ÓµÄ±äÁ¿*/
+	/*æ–°å¢åŠ çš„å˜é‡*/
 	u8 cnt_f = mpcb->cnt_subflows;
 	flow* F = (flow*)malloc(cnt_f * sizeof(flow));
 	u32 cnt_arr = 0;
@@ -134,38 +134,38 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 		}
 	}
 
-	/*³õÊ¼»¯*/
+	/*åˆå§‹åŒ–*/
 	mptcp_for_each_sk(mpcb, sk){
 		struct tcp_sock *tp = tcp_sk(sk);
-		F[i].id = i;
-		F[i].subf = sk;
-		if(max_srtt < tp->srtt_us){    /*ÕÒµ½×î´óÍù·µÊ±ÑÓ*/
+		(F[i]).id = i;
+		(F[i]).subf = sk;
+		if(max_srtt < tp->srtt_us){    /*æ‰¾åˆ°æœ€å¤§å¾€è¿”æ—¶å»¶*/
 			max_srtt = tp->srtt_us;
 		}
 		i++;
 	}
 	for(i = 0; i < cnt_f; i++){
-		F[i].arr = (max_srtt/2 - tcp_sk(F[i].subf)->srtt_us/2)/(tcp_sk(F[i].subf)->srtt_us) + 1;
-		cnt_arr += F[i].arr;
+		(F[i]).arr = (max_srtt/2 - tcp_sk((F[i]).subf)->srtt_us/2)/(tcp_sk((F[i]).subf)->srtt_us) + 1;
+		cnt_arr += (F[i]).arr;
 	}
-	arrive* A = (arrive*)malloc(cnt_arr * sizeof(arrive));    /*¿ªÉèÒ»¸öarriveÊı×é*/
+	struct arrive* A = (arrive*)malloc(cnt_arr * sizeof(arrive));    /*å¼€è®¾ä¸€ä¸ªarriveæ•°ç»„*/
 	u32 k = 0;
 	for(i = 0; i < cnt_f; i++){
-		for(int j = 0; j < F[i].arr; j++){
-			A[k++].t = tcp_sk(F[i].subf)->srtt_us/2 * (2*j + 1);
+		for(int j = 0; j < (F[i]).arr; j++){
+			(A[k++]).t = tcp_sk((F[i]).subf)->srtt_us/2 * (2*j + 1);
 		}
 	}
 	
 	for(k = 1; k <= cnt_arr; k++){
 		for(int j = 0; j < cnt_arr-k+1; j++){
-			if(A[j].t > A[j+1].t){
+			if((A[j]).t > (A[j+1]).t){
 				struct arrive temp = A[j];
 				A[j] = A[j+1];
 				A[j+1] = temp;
 			}
 		}
 	}
-	return A[0].f.subf£» 
+	return (A[0]).f.subf; 
 }
 
 /* Returns the next segment to be sent from the mptcp meta-queue.
