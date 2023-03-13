@@ -2,7 +2,7 @@
 
 #include <linux/module.h>
 #include <net/mptcp.h>
-#include <stdlib.h>
+#include <linux/slab.h>
 
 static unsigned char num_segments __read_mostly = 1;
 module_param(num_segments, byte, 0644);
@@ -119,7 +119,8 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 	
 	/*新增加的变量*/
 	u8 cnt_f = mpcb->cnt_subflows;
-	flow* F = (flow*)malloc(cnt_f * sizeof(flow));
+	//flow* F = (flow*)malloc(cnt_f * sizeof(flow));
+	flow* F=kmalloc(cnt_f, GFP_KERNEL);
 	u32 cnt_arr = 0;
 	u32 max_srtt = -1;
 	u32 i = 0;
@@ -149,7 +150,8 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 		(F[i]).arr = (max_srtt/2 - tcp_sk((F[i]).subf)->srtt_us/2)/(tcp_sk((F[i]).subf)->srtt_us) + 1;
 		cnt_arr += (F[i]).arr;
 	}
-	struct arrive* A = (struct arrive*)malloc(cnt_arr * sizeof(struct arrive));    /*开设一个arrive数组*/
+	//struct arrive* A = (struct arrive*)malloc(cnt_arr * sizeof(struct arrive));    /*开设一个arrive数组*/
+	struct arrive* A=kmalloc(cnt_arr, GFP_KERNEL);
 	u32 k = 0;
 	for(i = 0; i < cnt_f; i++){
 		int j;
