@@ -1,7 +1,9 @@
 /* MPTCP Scheduler module selector. Highly inspired by tcp_cong.c */
 
+#include <linux/bug.h>
 #include <linux/module.h>
 #include <net/mptcp.h>
+#include <trace/events/tcp.h>
 #include <linux/slab.h>
 
 static unsigned char num_segments __read_mostly = 1;
@@ -117,8 +119,14 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 	const struct mptcp_cb *mpcb = tcp_sk(meta_sk)->mpcb;
 	struct sock *sk, *bestsk = NULL, *backupsk = NULL;
 	
+	/*计算机子流数量*/
+	struct mptcp_tcp_sock *mptcp;
+	u8 cou = 0;
+	mptcp_for_each_sk(mpcb, mptcp){
+		cou++;
+	}
 	/*新增加的变量*/
-	u8 cnt_f = mpcb->cnt_subflows;
+	u8 cnt_f = cou;
 	//flow* F = (flow*)malloc(cnt_f * sizeof(flow));
 	flow* F=kmalloc(cnt_f, GFP_KERNEL);
 	u32 cnt_arr = 0;
@@ -137,7 +145,8 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 	}
 
 	/*初始化*/
-	mptcp_for_each_sk(mpcb, sk){
+	mptcp_for_each_sk(mpcb, mptcp){
+		sk = mptcp_to_sock(mptcp);
 		struct tcp_sock *tp = tcp_sk(sk);
 		(F[i]).id = i;
 		(F[i]).subf = sk;
@@ -211,6 +220,8 @@ static struct sk_buff *mptcp_rr_next_segment(struct sock *meta_sk,
 	struct sk_buff *skb = __mptcp_rr_next_segment(meta_sk, reinject);
 	unsigned char split = num_segments;
 	unsigned char iter = 0, full_subs = 0;
+	/*新增加的*/
+	struct mptcp_tcp_sock *mptcp;
 
 	/* As we set it, we have to reset it as well. */
 	*limit = 0;
@@ -229,7 +240,8 @@ static struct sk_buff *mptcp_rr_next_segment(struct sock *meta_sk,
 retry:
 
 	/* First, we look for a subflow who is currently being used */
-	mptcp_for_each_sk(mpcb, sk_it) {
+	mptcp_for_each_sk(mpcb, mptcp) {
+		sk_it = mptcp_to_sock(mptcp);
 		struct tcp_sock *tp_it = tcp_sk(sk_it);
 		struct rrsched_priv *rsp = rrsched_get_priv(tp_it);
 
@@ -263,7 +275,8 @@ retry:
 		/* So, we restart this round by setting quota to 0 and retry
 		 * to find a subflow.
 		 */
-		mptcp_for_each_sk(mpcb, sk_it) {
+		mptcp_for_each_sk(mpcb, mptcp) {
+			sk_it = mptcp_to_sock(mptcp);
 			struct tcp_sock *tp_it = tcp_sk(sk_it);
 			struct rrsched_priv *rsp = rrsched_get_priv(tp_it);
 
