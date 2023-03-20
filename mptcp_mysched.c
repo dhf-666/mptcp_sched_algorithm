@@ -137,7 +137,8 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
     /* Answer data_fin on same subflow!!! */
 	if (meta_sk->sk_shutdown & RCV_SHUTDOWN &&
 	    skb && mptcp_is_data_fin(skb)) {
-		mptcp_for_each_sk(mpcb, sk) {
+		mptcp_for_each_sub(mpcb, mptcp) {
+			sk = mptcp_to_sock(mptcp);
 			if (tcp_sk(sk)->mptcp->path_index == mpcb->dfin_path_index &&
 			    mptcp_rr_is_available(sk, skb, zero_wnd_test, true))
 				return sk;
