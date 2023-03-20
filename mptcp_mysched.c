@@ -122,7 +122,7 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 	/*计算机子流数量*/
 	struct mptcp_tcp_sock *mptcp;
 	u8 cou = 0;
-	mptcp_for_each_sk(mpcb, mptcp){
+	mptcp_for_each_sub(mpcb, mptcp) {
 		cou++;
 	}
 	/*新增加的变量*/
@@ -145,7 +145,7 @@ static struct sock *rr_get_available_subflow(struct sock *meta_sk,
 	}
 
 	/*初始化*/
-	mptcp_for_each_sub(mpcb, mptcp){
+	mptcp_for_each_sub(mpcb, mptcp) {
 		sk = mptcp_to_sock(mptcp);
 		struct tcp_sock *tp = tcp_sk(sk);
 		(F[i]).id = i;
