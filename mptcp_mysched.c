@@ -112,7 +112,7 @@ static int mptcp_rr_dont_reinject_skb(const struct tcp_sock *tp, const struct sk
 }
 
 /* We just look for any subflow that is available */
-static struct sock *_get_available_subflow(struct sock *meta_sk,
+static struct sock *mysched_get_available_subflow(struct sock *meta_sk,
 					     struct sk_buff *skb,
 					     bool zero_wnd_test)
 {
@@ -322,7 +322,7 @@ static struct mptcp_sched_ops mptcp_sched_mysched = {
 	.owner = THIS_MODULE,
 };
 
-static int __init rr_register(void)
+static int __init mysched_register(void)
 {
 	BUILD_BUG_ON(sizeof(struct rrsched_priv) > MPTCP_SCHED_SIZE);
 
@@ -332,13 +332,13 @@ static int __init rr_register(void)
 	return 0;
 }
 
-static void rr_unregister(void)
+static void mysched_unregister(void)
 {
 	mptcp_unregister_scheduler(&mptcp_sched_mysched);
 }
 
-module_init(rr_register);
-module_exit(rr_unregister);
+module_init(mysched_register);
+module_exit(mysched_unregister);
 
 MODULE_AUTHOR("Christoph Paasch");
 MODULE_LICENSE("GPL");
