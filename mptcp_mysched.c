@@ -5,6 +5,8 @@
 #include <net/mptcp.h>
 #include <trace/events/tcp.h>
 #include <linux/slab.h>
+#include <linux/ktime.h>
+#include <linux/skbuff.h>
 
 static unsigned char num_segments __read_mostly = 1;
 module_param(num_segments, byte, 0644);
@@ -33,7 +35,11 @@ typedef struct{    /*表示一条subflow*/
 struct arrive{    /*表示到达接收端的一次信息*/
 	flow f;    /*一条subflow*/
 	u32 t;    /*到达接收端的时间*/ 
-}; 
+};
+
+flow* F;
+struct arrive* A;
+
 
 /* If the sub-socket sk available to send the skb? */
 static bool mptcp_rr_is_available(const struct sock *sk, const struct sk_buff *skb,
@@ -128,7 +134,7 @@ static struct sock *mysched_get_available_subflow(struct sock *meta_sk,
 	/*新增加的变量*/
 	u8 cnt_f = cou;
 	//flow* F = (flow*)malloc(cnt_f * sizeof(flow));
-	flow* F=kmalloc(cnt_f, GFP_KERNEL);
+	//flow* F=kmalloc(cnt_f, GFP_KERNEL);
 	u32 cnt_arr = 0;
 	u32 max_srtt = -1;
 	u32 i = 0;
@@ -161,7 +167,7 @@ static struct sock *mysched_get_available_subflow(struct sock *meta_sk,
 		cnt_arr += (F[i]).arr;
 	}
 	//struct arrive* A = (struct arrive*)malloc(cnt_arr * sizeof(struct arrive));    /*开设一个arrive数组*/
-	struct arrive* A=kmalloc(cnt_arr, GFP_KERNEL);
+	//struct arrive* A=kmalloc(cnt_arr, GFP_KERNEL);
 	u32 k = 0;
 	for(i = 0; i < cnt_f; i++){
 		int j;
@@ -324,6 +330,10 @@ static struct mptcp_sched_ops mptcp_sched_mysched = {
 
 static int __init mysched_register(void)
 {
+	/*将申请内存代码放在这里*/
+	F=kmalloc(cnt_f, GFP_KERNEL);
+	A=kmalloc(cnt_arr, GFP_KERNEL);
+	
 	BUILD_BUG_ON(sizeof(struct rrsched_priv) > MPTCP_SCHED_SIZE);
 
 	if (mptcp_register_scheduler(&mptcp_sched_mysched))
@@ -334,6 +344,10 @@ static int __init mysched_register(void)
 
 static void mysched_unregister(void)
 {
+	/*释放内存代码在这里*/
+	kfree(F);
+	kfree(A);
+	
 	mptcp_unregister_scheduler(&mptcp_sched_mysched);
 }
 
