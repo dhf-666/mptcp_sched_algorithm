@@ -39,6 +39,8 @@ struct arrive{    /*表示到达接收端的一次信息*/
 
 flow* F;
 struct arrive* A;
+u8 cnt_f;
+u32 cnt_arr = 0;
 
 
 /* If the sub-socket sk available to send the skb? */
@@ -132,10 +134,10 @@ static struct sock *mysched_get_available_subflow(struct sock *meta_sk,
 		cou++;
 	}
 	/*新增加的变量*/
-	u8 cnt_f = cou;
+	cnt_f = cou;
 	//flow* F = (flow*)malloc(cnt_f * sizeof(flow));
 	//flow* F=kmalloc(cnt_f, GFP_KERNEL);
-	u32 cnt_arr = 0;
+	//u32 cnt_arr = 0;
 	u32 max_srtt = -1;
 	u32 i = 0;
 
