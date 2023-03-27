@@ -112,7 +112,7 @@ static int mptcp_rr_dont_reinject_skb(const struct tcp_sock *tp, const struct sk
 }
 
 /* We just look for any subflow that is available */
-static struct sock *rr_get_available_subflow(struct sock *meta_sk,
+static struct sock *_get_available_subflow(struct sock *meta_sk,
 					     struct sk_buff *skb,
 					     bool zero_wnd_test)
 {
@@ -211,7 +211,7 @@ static struct sk_buff *__mptcp_rr_next_segment(const struct sock *meta_sk, int *
 	return skb;
 }
 
-static struct sk_buff *mptcp_rr_next_segment(struct sock *meta_sk,
+static struct sk_buff *mptcp_mysched_next_segment(struct sock *meta_sk,
 					     int *reinject,
 					     struct sock **subsk,
 					     unsigned int *limit)
@@ -231,7 +231,7 @@ static struct sk_buff *mptcp_rr_next_segment(struct sock *meta_sk,
 		return NULL;
 
 	if (*reinject) {
-		*subsk = rr_get_available_subflow(meta_sk, skb, false);
+		*subsk = mysched_get_available_subflow(meta_sk, skb, false);
 		if (!*subsk)
 			return NULL;
 
@@ -314,9 +314,9 @@ found:
 	return NULL;
 }
 
-static struct mptcp_sched_ops mptcp_sched_rr = {
-	.get_subflow = rr_get_available_subflow,
-	.next_segment = mptcp_rr_next_segment,
+static struct mptcp_sched_ops mptcp_sched_mysched = {
+	.get_subflow = mysched_get_available_subflow,
+	.next_segment = mptcp_mysched_next_segment,
 	/*.name = "roundrobin",*/
 	.name = "mysched",
 	.owner = THIS_MODULE,
@@ -326,7 +326,7 @@ static int __init rr_register(void)
 {
 	BUILD_BUG_ON(sizeof(struct rrsched_priv) > MPTCP_SCHED_SIZE);
 
-	if (mptcp_register_scheduler(&mptcp_sched_rr))
+	if (mptcp_register_scheduler(&mptcp_sched_mysched))
 		return -1;
 
 	return 0;
@@ -334,7 +334,7 @@ static int __init rr_register(void)
 
 static void rr_unregister(void)
 {
-	mptcp_unregister_scheduler(&mptcp_sched_rr);
+	mptcp_unregister_scheduler(&mptcp_sched_mysched);
 }
 
 module_init(rr_register);
